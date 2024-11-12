@@ -41,7 +41,7 @@ Basic example:
 
 #include <stdio.h>
 #include <math.h>
-#include <fd.h>
+#include <fermidirac.h>
 #include <interp.h>
 #include <nse.h>
 #include <psns.h>
