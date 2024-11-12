@@ -1,0 +1,383 @@
+2012.07.15 10:32 (AO)
+
+Motivated by Cecilia Lunardini, I tried to compile
+PSNS2. Several compability problems are being solved.
+
+Note, that both libnse (NSE) and libinterp are now separate
+libraries (both working autoconf versions, fortunately, just type 
+
+./configure 
+make 
+sudo make install
+
+).
+HDF5 must be installed, because last version has been used to process type Ia supernovae, with
+FLASH-like output. For ubuntu, invoke: 
+
+sudo apt-get install libhdf5-serial-dev
+
+Cuba integration library is now version 3.0, and is not working  with old PSNS2.
+
+Following changes has been made to compile with Cuba 3.0:
+
+
+All integration routines now have few more arguments:
+
+#define USERDATA NULL
+#define SEED 0
+#define NBATCH 1000
+#define GRIDNO 0
+#define STATEFILE 0
+
+
+
+
+2010.09.07 9:18 (AO)
+
+NSE library fork finally removed from PSNS source.
+Now you have to complile&install libnse separately.
+The main problem is, that now direct communication 
+betwen libnse and PSNS has been shut down. Therefore,
+PNSN does not know about internal numbering and selection
+of nuclei inside libnse. The most obvious workaround
+is to use (Z,N) for identification of nuclei,
+instead od previously used number "inuc". I other
+words, all instances of 
+for(inuc; ... 
+  NSE_enum(..,inuc);
+must be replaced by 
+for(iz=0;iz<Z_max;iz++)
+  for(in=0;in<N_max;in++)
+    NSE(.....,iz,in);
+    
+In many cases (Z,N) matrix is nearly empty
+and this will lead to many unnecessary function
+calls with 0.0 result. Even for 3000 nuclei
+NSE ensemble, 90% of calls will return zero.
+Performance drop is unknown at the moment, we will see...
+
+However, it is up to the author of the neutrino
+emission functions to worry about this - only he
+knows which nuclei should be included! Library
+libnse should provide full Z,N coverage.
+
+
+
+
+2010.04.22 11:46 (AO)
+
+libpsns/
+pair_tbl.c splitted into pair_tbl1.c, pair_tbl2.c, pair_tbl3.c
+function pair() modified. 
+
+In file weak.c, function 
+
+void NSE_neutrino_spectrum_table(double *spectrum, double kT, double rho, double Ye, int flavour, double Enu_min, double Enu_max, int num, int type)
+
+changed into:
+
+void NSE_neutrino_spectrum_table(double *spectrum, double kT, double mu, double rho, double Ye, int flavour, double Enu_min, double Enu_max, int num, int type)
+
+chemical potential mu previously calculated inside
+now provided as an argument.
+
+03.07.2009 18:21 (A. Odrzywolek)
+
+BUG in examples/read_model.c FIXED:
+
+Added line in function read_line():
+
+memset(isotopes,0,600);  
+
+Now table char isotopes[20][30] is initialized with zeros.
+Random errors in reading abundance tables (Cr48, Fe52) FIXED!
+
+02.07.2009 11:30 (A. Odrzywolek)
+
+in file libinterp/interpolators.c
+
+Due to catastrophic bug found in ffn_bilinear followin line has been added
+as a workaround:
+
+  if(lg_rhoYe<1.0) return 0.0;
+
+Bug caused ffn_bilinear to return enormous wrong values
+if lg_rhoYe was below 1.0. Actually, it was my fault, as i assumed
+lg_rhoYe to be always positive. Blame, what a nonsense! Density
+is positive, but not logarithm of it! FFN table starts at 1.0.
+
+20.03.2009 12:19 (A. Odrzywolek)
+
+in file libinterp/interpolators.c (and interpolation.h):
+
+Added integer argument OUT_OF_DOMAIN to the list of arguments.
+Value of OUT_OF_DOMAIN select behavior of bilinear_interp if 
+requested value is out-of-range for pre-generated table.
+
+0 - return 0.0;
+1 - return egde values (try to extrapolate)
+4 - return -99.9, for functions which return pow(10.0, bilinear_interp(...) );
+effectively this returns very small non-zero value
+5 - like 4, but return -129.9; this is wanted feature
+of functions calculating flux and energy of neutrinos - if out-of-range is encountered
+we do not want Enu=1.0, but rather Enu=0.0 or antoher small value.
+
+06.03.2009 10:47 (A. Odrzywolek)
+
+--BUG FIXES:
+
+major bug in libpsns/weak.c, function Enu_avg_capture fixed:
+
+Before:
+
+  Enu_max=10.0*kT+2.0*mu+2.0*fabs(Q_eff);
+
+After fix:
+
+  Enu_max=10.0*kT+2.0*fabs(mu)+2.0*fabs(Q_eff);
+
+Bug above caused for positron captures (large negative mu)
+function Q_eff_capture to return left or right bisection range.
+Actually root was present in range. Visible effect of the bug
+on nuebar spectrum was fake second peak for Enu>30.0.
+
+minor bugs in utilities/NSE_spectrum_generator:
+
+before:
+      dF_dEnu = pair_tbl(Enu, lg_T, lg_rhoYe, flavour); 
+
+after:
+     if((lg_T<lg_T_2_thermal) && (lg_T>lg_T_1_thermal))  
+      dF_dEnu = pair_tbl(Enu, lg_T, lg_rhoYe, flavour); 
+    else
+      dF_dEnu = pair(Enu, kT, mu, flavour, 1); 
+
+This is because pair_tbl do not extend beyond lg_T>10.0.
+
+
+
+ 
+
+05.03.2009 08:04 (A. Odrzywolek)
+
+--BUG FIXES:
+
+In libnse/nse.c, function NSE_enum, handling out-of-domain values is now
+OK: no 0.0, nan or negative values returned. Everything except the followig
+has been deleted:
+
+  if( (kT<=kT_MIN_nse) || (kT>=kT_MAX_nse) || (lg_rho<=lg_rho_MIN_nse) || (lg_rho>=lg_rho_MAX_nse) ){
+
+    if( (kT<=kT_MIN_nse) && (lg_rho<=lg_rho_MIN_nse)){ kT=kT_MIN_nse;lg_rho=lg_rho_MIN_nse;} //1
+    if( (kT<=kT_MIN_nse) && (lg_rho>=lg_rho_MIN_nse) && (lg_rho<=lg_rho_MAX_nse) ){ kT=kT_MIN_nse;} //2
+    if( (kT<=kT_MIN_nse) && (lg_rho>=lg_rho_MAX_nse) ){kT=kT_MIN_nse;lg_rho=lg_rho_MAX_nse;} //3
+    if( (kT>=kT_MIN_nse) && (kT<=kT_MAX_nse) && (lg_rho>=lg_rho_MAX_nse) ){lg_rho=lg_rho_MAX_nse;} //4
+    if( (kT>=kT_MAX_nse) && (lg_rho>=lg_rho_MAX_nse) ){kT=kT_MAX_nse; lg_rho=lg_rho_MAX_nse;} //5
+    if( (kT>=kT_MAX_nse) && (lg_rho<=lg_rho_MAX_nse) && (lg_rho>=lg_rho_MIN_nse)){ kT=kT_MAX_nse;} //6
+    if( (lg_rho<=lg_rho_MIN_nse) && (kT>=kT_MAX_nse)){ kT=kT_MAX_nse;lg_rho=lg_rho_MIN_nse;} //7
+    if( (lg_rho<=lg_rho_MIN_nse) && (kT>=kT_MIN_nse) && (kT<=kT_MAX_nse)){ lg_rho=lg_rho_MIN_nse;} 
+    
+  }
+
+Additional code has been added to avoid wrong selection of i and j
+due to round-off in ceil.
+
+Before:
+
+  if( i<1 ) i=1; 
+  if( j<1 ) j=1; 
+
+After:
+
+  if( i<1 ) i=1; if( i>=N_kT_nse     ) i=N_kT_nse-1;
+  if( j<1 ) j=1; if( j>=N_lg_rho_nse ) j=N_lg_rho_nse-1;
+
+
+BUG FIXED: In file libinterp/interpolators.c function ffn_bilinear, returned negative
+values for strictly positive table. Bug due to interpolated value being outside selected square.
+
+Before:
+
+  if( T9<100.0 ) 
+    for(i=1; T9_tbl[i]<T9 ;i++) ;
+  else
+    i=13;
+
+  if( lg_rhoYe<11.0)
+    for(j=1; lg_rhoYe_tbl[j]<lg_rhoYe ;j++) ;
+  else
+    j=11;
+
+After fix: 
+
+
+  if( T9<100.0 )
+   { 
+    for(i=1; T9_tbl[i]<T9 ;i++) ;
+   }
+  else
+   {
+    i=13;
+    T9 = 100.0;
+   }
+
+  if( lg_rhoYe<11.0)
+   {  
+    for(j=1; lg_rhoYe_tbl[j]<lg_rhoYe ;j++) ;
+   }
+  else
+   {
+    j=11;
+    lg_rhoYe=11.0; 
+   }
+
+BUG FIXED: in file libpsns/Makefile.am obsolete thermal_tbl.c removed.
+Now this file is splitted into pair_tbl.c, plasma_tbl.c and chemical_potential_tbl.c.
+
+04.03.2009 13:55 (A. Odrzywolek)
+
+--BUG FIXED: ffn_bilinear returned nan for lg_rhoYe above maximum tabulated value of 11.0
+
+In file src/libinterp/interpolators.c, function ffn_bilinear
+Before:
+
+
+    for(i=1; T9_tbl[i]<T9 ;i++) ;
+
+    for(j=1; lg_rhoYe_tbl[j]<lg_rhoYe ;j++) ;
+
+After fix:
+
+  if( T9<100.0 ) 
+    for(i=1; T9_tbl[i]<T9 ;i++) ;
+  else
+    i=13;
+
+  if( lg_rhoYe<11.0)
+    for(j=1; lg_rhoYe_tbl[j]<lg_rhoYe ;j++) ;
+  else
+    j=11;
+
+
+28.02.2009 11:25 (A. Odrzywolek)
+
+--BUG FIXED: G_linear returned negative values for second grid point,
+and X_NSE returned nan due to log10 of negative.
+NOTE: G_gsl_linear works OK! 
+TODO: configure script should detect gsl library and use G_gsl_linear
+if present, G_linear otherwise
+
+
+Before:
+
+  if(GkT[inuc][N_kT_nse-1]<0.000001) return 0.0;
+  /* select upper right grid point */
+  i = (int) ceil( (kT-kT_MIN_nse)/delta_kT_nse);
+
+
+After :
+  if(kT<=kT_MIN_nse) return 0.0;
+  if(GkT[inuc][N_kT_nse-1]<0.000001) return 0.0;
+  /* select upper right grid point */
+  i = (int) ceil( (kT-kT_MIN_nse)/delta_kT_nse);
+  if(i<1) return 0.0;
+
+23.02.2009 13:37 (A. Odrzywolek)
+
+-- libnse/nse.c, function NSE_enum : out-of-domain section replaced
+with: 
+
+ if( (kT<=kT_MIN_nse) || (kT>=kT_MAX_nse) || (lg_rho<=lg_rho_MIN_nse) || (lg_rho>=lg_rho_MAX_nse) )
+   return 0.0; 
+
+BUG FIXED: No 'nan' and 'inf' returned now...
+TODO : do something with this 
+
+
+23.02.2009 11:43 (A. Odrzywolek)
+
+Bug fixes in libnse:
+
+-- Multiple entries in data/Ye.dat (0.35, 0.55 appeared twice) removed.
+-- Makefile.am and nse_tbl.h : np_table.c  removed from _SOURCED to EXTRA_DIST
+and #include "np_table.c" added to nse.c; declarations of tables n and p removed from nse_tbl.h
+-- in libnse/nse.c, function NSE:
+
+  if(Z>Z_max_nse) return 0.0;
+  if(N>N_max_nse) return 0.0;
+
+replaced with:
+
+  if(Z>=Z_max_nse) return 0.0;
+  if(N>=N_max_nse) return 0.0;
+
+according to proper data/N_Z_tbl.dat size.
+
+-- Makefile.am : NSE_pn_table_parser_SOURCES = NSE_pn_table_parser.c added.
+In NSE_pn_table_parser.c 'const double' replaced with 'static const double'.
+File np_table.c re-generated.
+
+-- Makefile.am : NSE_pn_table.nb added to EXTRA_DIST
+
+
+
+
+
+21.02.2009 09:49 (A. Odrzywolek) 
+Added in libpsns/diffemissivity.c, function plasmaL, plasmaT: 
+--  if (Enu<=0.0) return 0.0;
+This should fix the bug : nan for Enu=0.0 in plasmaL
+
+Added file libpsns/constants.h, approporiate numbers 3.14... and 137
+in diffemissivity.c replaced with those defined in constants.h.
+
+Added constants.h to libpsps/Makefile.am, line libpsns_la_SOURCES = ....
+
+17.02.2009 New directory layout:
+
+These libraries might be used and developed standalone:
+libfd/  -   Fermi-Dirac functions : libfd.la
+libinterp/ - various interpolators
+
+libnse/ - NSE library, libinterp required
+libpsns/ - Neutrino spectrum and emissivity library, requires libfd, libinterp and libnse
+
+utilities/ - some useful tools, particularly CONSISTENT programs and methods to regenerate
+tables used by libpsns shoul apper here in the future 
+
+examples/  - presn - example program processing pre-supernova models in text format 
+           - snIa - example program processing FLASH plotfiles in HDF5 format
+        
+cluster_tools/ - two scrips for cluster queues
+
+kippenhahn_diags/ - scripts creating Kippenhahn diagrams
+
+
+
+
+ 
+ 
+
+14.02.2009 - 
+
+1.
+configure.ac, Makefile.am modified according to Automake manual, tests for GNU GSL, Cuba
+and HDF5 added with warning message 
+
+2. NSE_neutrino_spectrum_table() and related functions implemented using tabulated effective Q_values
+and eff_rates included now in ffn_table_*.c files. Speed-up by a factor of 10x-100x.
+
+3. Trilinear interpolation for 3D tables (NSE and thermal spectrum) implemented (trilinear_interp() )
+using rescalled unit cube formula trilinear_interp_unit_square().
+
+4. Because icc compilation is too long 
+thermal_tbl.c is splitted into pair_tbl.c, plasma_tbl.c, chemical_potential_tbl.c and thermal_tbl.c.
+File thermal_tbl.c is now empty (no functions) but in future thermal_tbl() function should be placed
+here with tabulated pair+plasmaL+plasmaT .
+
+
+06.10.2008 - proton() and neutron() functions implemented; they return
+neutrino spectrum per nucleus (=nuclide in this case) in [MeV^-1 s^-1]
+
+
+29.09.2008 - first autoconf version

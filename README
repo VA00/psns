@@ -1,0 +1,90 @@
+Install instructions
+
+Required software and pakcages to compile:
+GNU gsl
+HDF5
+zlib
+Cuba (integration library from feynarts)
+
+C and fortran compilers are required, eg. gcc and gfortran.
+C preprocesor also must be installed.
+
+Tabulated versions of functions use very large hardcoded tables,
+you need at least 2 GB of memory to compile; compile time might
+be very long for some compilers (icc in  particular).
+
+
+This is a collection of C routines, scripts and tools required
+to process stored output of computer models of astrophysical phenomena
+like pre-supernovae and supernovae and get detailed data on neutrino
+emission from these objects.
+
+
+Transverse plasmon decay spectrum [ plasmaT() routine ]
+is implemented using quantitative approximation (Beaudet, Petrosian,
+Salpeter -like) and produces errors (integrated spectrum vs total rate) 
+as large as 50%. Required transverse plasmon dispersion relations [ dispersionT(), inv_dispersionT() ]
+also are still unimplemented. Longitudinal plasmon related routines
+are fully implemented using Braaten-Segel approximation. 
+
+I think that some ,,normalization'' among functions
+is required. They use as input permutations of T9, lg_T, T and kT
+as temperature input, and rho (both Si and cgs) lg_rho, rhoYe, lg_rhoYe and
+mu (chemical potential) as measure of density. Maybe use of T, rho and Ye
+triad? Put chemical_potential() inside routines? Chem. pot. is natural
+for theoretical analysis, but end users probably prefer density. 
+
+
+Basic example:
+
+#include <stdio.h>
+#include <math.h>
+#include <fd.h>
+#include <interp.h>
+#include <nse.h>
+#include <psns.h>
+
+
+main()
+{
+  
+  double E_nu	= 1.0, 	//neutrino energy 1 MeV
+         kT 	= 0.5,  // temperature 0.5 MeV
+         mu 	= 1.0,  //chemical potential 1.0 MeV
+         Y_e = 0.5,     //electron fraction [lepton number  to baryon number ratio]
+         rho, rho_Ye;
+	 
+  int flavour=1, //neutrino flavour 1 : electron neutrino         
+      integration_method = 1; // 1 - Cuhre 2,3,4 - various Monte-Carlo algorithm [Suave, Vegas, Divonne], cf. Cuba documentation
+         
+  // Basic conversion between (kT, mu) and (kT, rho)
+  
+  rho_Ye = rhoYe(kT, mu); //density * electron fraction
+  rho = rho_Ye/Y_e;      // density
+  
+  printf("%e\n",    pair(E_nu, kT, mu, flavour, integration_method) );
+  printf("%e\n",   photo(E_nu, kT, mu, flavour, integration_method) );
+  printf("%e\n", plasmaL(E_nu, kT, mu, 1) );  //this is low-energy keV spectrum
+  printf("%e\n", plasmaT(E_nu, kT, mu, 1) );
+  printf("%e\n", NSE_neutrino_spectrum(E_nu, kT, rho, Y_e, flavour) );
+
+
+return 0;
+
+}
+
+
+Compile with:
+
+gcc test_psns.c -o test_psns -lpsns -lfd -lm -lcuba -lnse -linterp -lgsl -lgslcblas
+
+Expected result:
+
+bash-3.1$ ./test_psns
+7.127285e+26
+3.393551e+24
+0.000000e+00
+4.034880e+21
+2.682650e+28
+
+
