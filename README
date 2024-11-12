@@ -1,5 +1,9 @@
 Install instructions
 
+
+Detailed installation procedure, tested on Ubuntu Linux 2024-11-12, can be found
+in doc/ directory. 
+
 Required software and pakcages to compile:
 GNU gsl 
 HDF5 (for SN Ia neutrinos)
@@ -13,8 +17,9 @@ C preprocesor also must be installed.
 
 Tabulated versions of functions use very large hardcoded tables,
 you need at least 2 GB of memory to compile; compile time might
-be very long for some compilers (icc in  particular).
-
+be very long for some compilers (icc in  particular). Use 
+make -j4
+for multithreaded compilation. 
 
 This is a collection of C routines, scripts and tools required
 to process stored output of computer models of astrophysical phenomena
