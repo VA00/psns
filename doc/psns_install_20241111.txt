@@ -1,0 +1,107 @@
+A. Install GFDI 
+  a) Clone Fermi-Dirac integrals:
+     
+     git clone https://github.com/VA00/Generalized-Fermi-Dirac-integrals
+
+  b) Install git if missing:
+
+     sudo apt install git
+
+  c) Go to GFDI directory:
+
+     cd Generalized-Fermi-Dirac-integrals/
+
+  d) Install gcc if missing:
+
+      sudo apt install build-essential
+
+  e) Install autoconf if missing:
+
+      sudo apt install autoconf automake libtool
+
+  f) Create configure script from configure.ac 
+      
+      autoreconf -vif
+
+  g) Install Arb - arbitrary precision numerical integrator
+
+      sudo apt install libflint-dev
+
+  h) Run configure script
+
+     ./configure
+
+
+  i) Compile
+
+       make
+
+  j) Install
+
+      sudo make install
+
+  k) Update shared library database:
+
+      sudo ldconfig
+
+B. Install libNSE
+
+
+1. wget https://th.if.uj.edu.pl/~odrzywolek/psns/Numerical%20tables%20and%20codes/libnse/source/libnse-0.14.tar.gz
+2. tar xvf libnse-0.14.tar.gz
+3. cd libnse-0.14/
+4. ./configure
+5. make
+6. sudo make install
+7. sudo ldconfig
+
+Check if libNSE works:
+
+1. cd src
+2. gcc example.c -o example -lnse
+3. ./example
+X[0]=1.694083e-05
+X[1]=1.694083e-05
+X[2]=1.000054e+00
+
+C. Install libpsns
+
+1. Install Cuba
+  a) wget https://feynarts.de/cuba/Cuba-4.2.2.tar.gz
+  b) tar xvf Cuba-4.2.2.tar.gz
+  c) cd Cuba-4.2.2
+  d) ./configure
+  e) make
+  f) sudo make install
+  g) sudo ldcofig
+
+2. Install libinterp
+  a) wget https://th.if.uj.edu.pl/~odrzywolek/homepage/codes/libinterp/source/libinterp-0.13.tar.gz
+  b) tar xvf libinterp-0.13.tar.gz
+  c) cd libinterp-0.13
+  d) ./configure
+  e) make
+  f) sudo make install
+  g) sudo ld
+
+3. Install libpsns
+  a) wget https://th.if.uj.edu.pl/~odrzywolek/psns/PSNS_source/libpsns-0.12.tar.gz
+  b) tar xvf libpsns-0.12.tar.gz
+  c) cd libpsns-0.12
+  d) ./configure
+  e) make
+  f) sudo make install
+  g) sudo ld
+
+
+Finally, compile psns_example to get some spectra:
+
+gcc psns_example.c -o psns_example -lpsns -lm -lfermidirac -lflint -lcuba -lmvec
+./psns_example
+
+
+
+
+
+
+
