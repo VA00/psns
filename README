@@ -8,7 +8,7 @@ Required software and pakcages to compile:
 GNU gsl 
 HDF5 (for SN Ia neutrinos)
 zlib (for old presupernova data)
-Cuba (integration library from feynarts)
+Cuba (integration library from feynarts, v 4.2.2)
 Generalized Fermi-Dirac Integrals (from this account)
 
 
