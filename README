@@ -1,10 +1,12 @@
 Install instructions
 
 Required software and pakcages to compile:
-GNU gsl
-HDF5
-zlib
+GNU gsl 
+HDF5 (for SN Ia neutrinos)
+zlib (for old presupernova data)
 Cuba (integration library from feynarts)
+Generalized Fermi-Dirac Integrals (from this account)
+
 
 C and fortran compilers are required, eg. gcc and gfortran.
 C preprocesor also must be installed.
@@ -76,7 +78,7 @@ return 0;
 
 Compile with:
 
-gcc test_psns.c -o test_psns -lpsns -lfd -lm -lcuba -lnse -linterp -lgsl -lgslcblas
+gcc test_psns.c -o test_psns -lpsns -lfermidirac -lflint -lm -lcuba -lnse -linterp -lgsl -lgslcblas
 
 Expected result:
 
