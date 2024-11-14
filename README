@@ -94,4 +94,13 @@ bash-3.1$ ./test_psns
 4.034880e+21
 2.682650e+28
 
+## Citation
+If you use this code in your research, please cite the following papers:
+
+- [A. Odrzywolek,Plasmaneutrino spectrum,  The European Physical Journal C, Volume 52, pages 425–434, (2007), https://doi.org/10.1140/epjc/s10052-007-0378-4]
+- [M. Misiaszek, A. Odrzywołek, and M. Kutschera, Neutrino spectrum from the pair-annihilation process in the hot stellar plasma, Phys. Rev. D, 74, 043006 (2006), https://doi.org/10.1103/PhysRevD.74.043006]
+- [A. Odrzywołek, Nuclear statistical equilibrium neutrino spectrum, Phys. Rev. C, 80, 045801 (2009), https://doi.org/10.1103/PhysRevC.80.045801]
+
+
+
 
